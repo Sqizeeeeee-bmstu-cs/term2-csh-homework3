@@ -2,10 +2,39 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Hub</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Stock Hub приветствует тебя!</h1>
-    <p>Если ты это видишь, значит сервер настроен верно.</p>
+    <div class="container">
+        <header>
+            <h1>Stock<span>Hub</span></h1>
+            <div id="connection-status" class="status-online">online</div>
+        </header>
+
+        <main>
+            <section class="search-section">
+                <div class="search-group">
+                    <input type="text" id="tickerInput" placeholder="Введите тикер (AAPL, TSLA...)" maxlength="5">
+                    <button onclick="searchStock()">Найти</button>
+                </div>
+            </section>
+
+            <div id="stockResult" class="stock-grid">
+            </div>
+
+            <hr class="divider">
+
+            <section class="portfolio-section">
+                <h2>Мой портфель</h2>
+                <div id="portfolioList" class="stock-grid">
+                    
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>

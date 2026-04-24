@@ -10,5 +10,9 @@ public class PortfolioItem
 
     public decimal BuyPrice { get; set; }
 
+    public int UserId { get; set; }
+    
+    public User? User { get; set; }
+
     public DateTime PurchaseDate { get; set; } = DateTime.Now;
 }
