@@ -1,7 +1,6 @@
 using System.Net.Http.Json;
 using homework3.Models;
 using homework3.Configs;
-
 namespace homework3.Services;
 
 public class StockService
@@ -19,20 +18,20 @@ public class StockService
 
     public async Task<StockPrice?> GetStockPriceAsync(string symbol)
     {
-        // 1. Сформируй URL, используя _config.BaseUrl, symbol и _config.ApiKey
-        // Подсказка: путь для Finnhub — "/api/v1/quote?symbol={symbol}&token={key}"
-        
-        // 2. Сделай LogAction, что запрос начат (уровень Info)
+
+        string URL = $"{_config.BaseUrl}/api/v1/quote?symbol={symbol}&token={_config.ApiKey}";
+        _logger.LogAction($"запрос на {symbol}", LogLevels.Info);
 
         try 
         {
-            // 3. Используй _httpClient.GetFromJsonAsync<StockPrice>(url)
-            // 4. Верни результат
-            return null; // замени на логику
+            var result = await _httpClient.GetFromJsonAsync<StockPrice>(URL);
+            _logger.LogAction($"данные на запрос по {symbol} получены", LogLevels.Info);
+
+            return result;
         }
         catch (Exception ex)
         {
-            // 5. Если ошибка — залогируй её (уровень Error) и верни null
+            _logger.LogAction($"ошибка по запросу на {symbol}: {ex}", LogLevels.Error);
             return null;
         }
     }

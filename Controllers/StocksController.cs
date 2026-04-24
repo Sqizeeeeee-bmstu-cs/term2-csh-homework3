@@ -1,19 +1,16 @@
 
 using Microsoft.AspNetCore.Mvc;
 using homework3.Services;
-using homework3.Models;
-
 namespace homework3.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class StocksController : ControllerBase
 {
-    // Объяви приватные readonly поля для сервиса и логгера
-    public readonly StockService _stockService;
-    public readonly ICustomLogger _logger;
 
-    // Создай конструктор и внедри зависимости (DI)
+    private readonly StockService _stockService;
+    private readonly ICustomLogger _logger;
+
     public StocksController(StockService service, ICustomLogger logger) 
     {
         _stockService = service;
@@ -23,12 +20,18 @@ public class StocksController : ControllerBase
     [HttpGet("{symbol}")]
     public async Task<IActionResult> GetPrice(string symbol)
     {
-        // 1. Вызови асинхронный метод сервиса GetStockPriceAsync(symbol)
-        
-        // 2. Сделай проверку: если результат null -> верни NotFound()
-        
-        // 3. Если данные есть -> верни Ok(result)
-        return default; // замени на свою логику
+        var result = await _stockService.GetStockPriceAsync(symbol);
+
+        if (result == null)
+        {
+            _logger.LogAction($"Данные для тикера {symbol} не найдены", LogLevels.Warning);
+            return NotFound(new { message = $"Акция {symbol} не найдена" });
+        }
+
+        else
+        {
+            return Ok(result);
+        }
     }
 }
 
