@@ -16,7 +16,7 @@ public class StockService
         _config = config;
     }
 
-    public async Task<StockPrice?> GetStockPriceAsync(string symbol)
+    public async Task<StockPrice> GetStockPriceAsync(string symbol)
     {
 
         string URL = $"{_config.BaseUrl}/api/v1/quote?symbol={symbol}&token={_config.ApiKey}";

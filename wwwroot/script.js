@@ -1,82 +1,121 @@
+function switchTab(type) {
+    const loginForm = document.getElementById('form-login');
+    const registerForm = document.getElementById('form-register');
+    const loginTab = document.getElementById('tab-login');
+    const registerTab = document.getElementById('tab-register');
 
-async function searchStock() {
-    const input = document.getElementById('tickerInput');
-    const ticker = input.value.toUpperCase().trim();
-    const resultContainer = document.getElementById('stockResult');
-
-    if (!ticker) return;
-
-    try {
-        const response = await fetch(`/api/stocks/${ticker}`);
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            alert(errorData.error || "Акция не найдена");
-            return;
-        }
-
-        const data = await response.json();
-        
-        renderStockCard(ticker, data, resultContainer);
-        
-    } catch (error) {
-        console.error("Ошибка:", error);
+    if (type === 'login') {
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
+        loginTab.classList.add('active');
+        registerTab.classList.remove('active');
+    } else {
+        loginForm.classList.add('hidden');
+        registerForm.classList.remove('hidden');
+        loginTab.classList.remove('active');
+        registerTab.classList.add('active');
     }
 }
 
-function renderStockCard(symbol, data, container) {
-    const colorClass = data.dp >= 0 ? 'positive' : 'negative';
-    const sign = data.dp >= 0 ? '+' : '';
+async function onRegister(event) {
+    event.preventDefault();
+    const username = document.getElementById('reg-name').value;
+    const email = document.getElementById('reg-email').value;
+    const password = document.getElementById('reg-password').value;
 
-    container.innerHTML = `
-        <div class="stock-card">
-            <h3>${symbol} <span>${sign}${data.dp.toFixed(2)}%</span></h3>
-            <p class="price">${data.c.toFixed(2)} $</p>
-            <p class="change ${colorClass}">
-                Изменение: ${sign}${data.d.toFixed(2)} $
-            </p>
-            <button onclick="buyStock('${symbol}', 1)" style="margin-top: 15px; width: 100%;">
-                Купить 1 шт.
-            </button>
-        </div>
-    `;
-}
-
-async function buyStock(ticker, quantity) {
     try {
-        const response = await fetch('/api/stocks/buy', {
+        const response = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ticker, quantity })
+            body: JSON.stringify({ username, email, password })
         });
-
+        const data = await response.json();
         if (response.ok) {
-
-            loadPortfolio();
+            alert('Регистрация успешна! Теперь войдите.');
+            switchTab('login');
+        } else {
+            alert('Ошибка: ' + (data.error || data.message));
         }
     } catch (error) {
-        console.error("Ошибка при покупке:", error);
+        alert('Сервер недоступен');
     }
 }
 
-async function loadPortfolio() {
-    const portfolioContainer = document.getElementById('portfolioList');
-    
+async function onLogin(event) {
+    event.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
     try {
-        const response = await fetch('/api/stocks/portfolio');
-        const items = await response.json();
-
-        portfolioContainer.innerHTML = items.map(item => `
-            <div class="stock-card" style="border-left-color: var(--text-dim)">
-                <h3>${item.ticker}</h3>
-                <p class="price">${item.buyPrice.toFixed(2)} $</p>
-                <p class="change">Кол-во: ${item.quantity} шт.</p>
-                <small style="color: var(--text-dim)">Куплено: ${new Date(item.purchaseDate).toLocaleDateString()}</small>
-            </div>
-        `).join('');
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('username', data.username);
+            showApp(); 
+        } else {
+            alert('Неверный логин или пароль');
+        }
     } catch (error) {
-        console.error("Ошибка загрузки портфеля:", error);
+        alert('Ошибка сервера');
     }
 }
 
-loadPortfolio();
+function showApp() {
+    document.getElementById('auth-screen').classList.add('hidden');
+    document.getElementById('main-screen').classList.remove('hidden');
+    document.getElementById('user-name-display').innerText = localStorage.getItem('username');
+    loadTrends();
+}
+
+function logout() {
+    localStorage.clear();
+    location.reload();
+}
+
+window.onload = () => {
+    if (localStorage.getItem('token')) {
+        showApp();
+    }
+};
+
+async function loadTrends() {
+    const grid = document.getElementById('trends-grid');
+    if (!grid) return;
+
+    try {
+        const response = await fetch('/api/stocks/trends');
+        const stocks = await response.json();
+        
+        // Поможет нам понять структуру данных в консоли браузера
+        console.log("Данные трендов:", stocks);
+
+        grid.innerHTML = stocks.map(s => {
+            // Подстраховка под разный регистр букв от .NET
+            const symbol = s.symbol || s.Symbol || "???";
+            const price = s.price || s.Price || 0;
+            const change = s.change !== undefined ? s.change : (s.Change || 0);
+
+            const colorClass = change >= 0 ? 'positive' : 'negative';
+            const sign = change >= 0 ? '+' : '';
+            
+            return `
+                <div class="trend-card">
+                    <h4>${symbol}</h4>
+                    <div class="trend-price">${Number(price).toFixed(2)} $</div>
+                    <div class="trend-change ${colorClass}">
+                        ${sign}${Number(change).toFixed(2)}%
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (error) {
+        console.error("Ошибка JS при отрисовке:", error);
+        grid.innerHTML = '<p>Не удалось загрузить котировки</p>';
+    }
+}

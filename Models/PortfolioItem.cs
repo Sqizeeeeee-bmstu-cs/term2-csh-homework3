@@ -12,7 +12,7 @@ public class PortfolioItem
 
     public int UserId { get; set; }
     
-    public User? User { get; set; }
+    public User User { get; set; }
 
     public DateTime PurchaseDate { get; set; } = DateTime.Now;
 }

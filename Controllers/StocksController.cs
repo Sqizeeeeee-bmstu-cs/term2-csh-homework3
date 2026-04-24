@@ -1,6 +1,8 @@
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+
 
 using homework3.Services;
 using homework3.Exceptions;
@@ -69,45 +71,82 @@ public class StocksController : ControllerBase
         public int Quantity { get; set; } 
     }
 
+    [Authorize]
     [HttpPost("buy")]
     public async Task<IActionResult> BuyStock([FromBody] BuyRequest request)
     {
         try 
         {
-            var priceData = await _stockService.GetStockPriceAsync(request.Ticker);
+            var userIdClaim = User.FindFirst("id")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized(new { message = "Пользователь не идентифицирован" });
+            }
+            int userId = int.Parse(userIdClaim);
 
+            var priceData = await _stockService.GetStockPriceAsync(request.Ticker);
             if (priceData == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Не удалось получить цену акции" });
             }
 
-            PortfolioItem item = new PortfolioItem();
-
-            item.Ticker = request.Ticker;
-            item.Quantity = request.Quantity;
-            item.BuyPrice = priceData.CurrentPrice;
-            item.PurchaseDate = DateTime.Now;
+            PortfolioItem item = new PortfolioItem
+            {
+                Ticker = request.Ticker.ToUpper(),
+                Quantity = request.Quantity,
+                BuyPrice = priceData.CurrentPrice,
+                PurchaseDate = DateTime.Now,
+                UserId = userId
+            };
 
             _context.PortfolioItems.Add(item);
-
             await _context.SaveChangesAsync();
 
-            _logger.LogAction($"В портфель добавлено: {item.Ticker}, цена: {item.BuyPrice}, сколько: {item.Quantity}", LogLevels.Info);
+            _logger.LogAction($"Юзер {userId} купил: {item.Ticker}, цена: {item.BuyPrice}, кол-во: {item.Quantity}", LogLevels.Info);
 
-            return Ok(new { message = "Успешно куплено" });
+            return Ok(new { message = "Успешно куплено", id = item.Id });
         }
         catch (Exception ex)
         {
-            _logger.LogAction($"ошибка {ex}", LogLevels.Error);
-            return StatusCode(500, ex.Message);
+            _logger.LogAction($"Ошибка при покупке: {ex.Message}", LogLevels.Error);
+            return StatusCode(500, new { error = ex.Message });
         }
     }
 
+    [Authorize]
     [HttpGet("portfolio")]
     public async Task<IActionResult> GetPortfolio()
     {
-        var portfolio = await _context.PortfolioItems.ToListAsync();
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (userIdClaim == null) return Unauthorized();
+        int userId = int.Parse(userIdClaim);
+
+        var portfolio = await _context.PortfolioItems
+            .Where(p => p.UserId == userId)
+            .ToListAsync();
+
         return Ok(portfolio);
+    }
+
+    [HttpGet("trends")]
+    public async Task<IActionResult> GetTrends()
+    {
+        var trendSymbols = new[] { "AAPL", "TSLA", "MSFT", "GOOGL", "NVDA", "AMZN" };
+        var results = new List<object>();
+
+        foreach (var symbol in trendSymbols)
+        {
+            var data = await _stockService.GetStockPriceAsync(symbol);
+            if (data != null)
+            {
+                results.Add(new { 
+                    Symbol = symbol, 
+                    Price = data.CurrentPrice, 
+                    Change = data.PercentChange 
+                });
+            }
+        }
+        return Ok(results);
     }
 
 }
