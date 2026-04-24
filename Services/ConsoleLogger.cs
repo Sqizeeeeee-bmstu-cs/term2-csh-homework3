@@ -1,24 +1,20 @@
-
-
-
-
 using homework3.Services;
 
 public class ConsoleLogger : ICustomLogger
 {
-    public void LogAction(string message, LogLevels level)
+    public void LogAction(string message, LogLevels level = LogLevels.Info)
     {
-        Console.BackgroundColor = level switch
+        Console.ForegroundColor = level switch
         {
-            LogLevels.Info => ConsoleColor.Blue,
+            LogLevels.Info => ConsoleColor.Cyan,
             LogLevels.Warning => ConsoleColor.Yellow,
             LogLevels.Error => ConsoleColor.Red,
-            _ => ConsoleColor.Black
+            _ => ConsoleColor.White
         };
 
-        Console.ForegroundColor = ConsoleColor.White;
-        Console.WriteLine($"[{level.ToString().ToUpper()}] {DateTime.Now:HH:mm:ss} - {message}");
+        Console.Write($"[{level.ToString().ToUpper()}] {DateTime.Now:HH:mm:ss} ");
 
         Console.ResetColor();
+        Console.WriteLine($"- {message}");
     }
 }

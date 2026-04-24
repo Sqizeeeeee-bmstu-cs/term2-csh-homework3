@@ -1,0 +1,4 @@
+
+
+dotnet ef database update - upd db
+
