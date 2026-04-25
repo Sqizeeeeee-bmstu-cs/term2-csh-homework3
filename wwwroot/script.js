@@ -66,9 +66,13 @@ async function onLogin(event) {
 }
 
 function showApp() {
+
     document.getElementById('auth-screen').classList.add('hidden');
     document.getElementById('main-screen').classList.remove('hidden');
+    
     document.getElementById('user-name-display').innerText = localStorage.getItem('username');
+
+    console.log("Вызываем loadTrends из showApp...");
     loadTrends();
 }
 
@@ -85,17 +89,33 @@ window.onload = () => {
 
 async function loadTrends() {
     const grid = document.getElementById('trends-grid');
+    const statusText = document.getElementById('update-status');
+    
     if (!grid) return;
 
     try {
         const response = await fetch('/api/stocks/trends');
-        const stocks = await response.json();
+        const data = await response.json();
         
-        // Поможет нам понять структуру данных в консоли браузера
-        console.log("Данные трендов:", stocks);
+        console.log("Данные с бэкенда:", data);
 
+        // 1. Обновляем время (проверяем и маленькую, и большую букву)
+        const time = data.lastUpdated || data.LastUpdated;
+        if (statusText && time) {
+            statusText.innerText = `Данные актуальны на: ${time}`;
+        }
+
+        // 2. Берем массив акций
+        const stocks = data.stocks || data.Stocks;
+
+        if (!stocks || !Array.isArray(stocks)) {
+            grid.innerHTML = '<p>Список акций пуст или не получен.</p>';
+            return;
+        }
+
+        // 3. Отрисовываем карточки
         grid.innerHTML = stocks.map(s => {
-            // Подстраховка под разный регистр букв от .NET
+            // Подстраховка под разный регистр полей внутри объекта акции
             const symbol = s.symbol || s.Symbol || "???";
             const price = s.price || s.Price || 0;
             const change = s.change !== undefined ? s.change : (s.Change || 0);
@@ -115,7 +135,8 @@ async function loadTrends() {
         }).join('');
 
     } catch (error) {
-        console.error("Ошибка JS при отрисовке:", error);
-        grid.innerHTML = '<p>Не удалось загрузить котировки</p>';
+        console.error("Ошибка при отрисовке трендов:", error);
+        grid.innerHTML = '<p>Не удалось загрузить котировки. Проверьте соединение.</p>';
     }
 }
+

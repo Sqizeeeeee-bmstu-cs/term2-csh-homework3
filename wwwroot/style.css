@@ -186,3 +186,37 @@ input:focus {
     letter-spacing: 1px;
 }
 
+/* Контейнер для заголовка и даты */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* Центрируем по вертикали */
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.trends-grid {
+    display: grid;
+    /* Это заставит карточки красиво встать в сетку, а не в одну линию */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    clear: both; /* На всякий случай сбросим обтекание */
+}
+
+.trends-section h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: var(--text-main);
+}
+
+/* Стилизация надписи времени */
+#update-status {
+    font-size: 0.95rem;      /* Увеличили размер */
+    color: var(--accent);    /* Сделали голубым под стиль кнопок */
+    font-weight: 500;
+    opacity: 0.8;            /* Чуть приглушим, чтобы не отвлекало от цен */
+    background: rgba(56, 189, 248, 0.1); /* Легкая подсветка фона */
+    padding: 4px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(56, 189, 248, 0.2);
+}

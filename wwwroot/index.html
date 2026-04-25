@@ -35,7 +35,6 @@
                 </form>
             </div>
 
-            <!-- Секция приложения (ТЕПЕРЬ СНАРУЖИ) -->
             <div id="main-screen" class="hidden">
                 <div class="user-greeting">
                     <h2>Добро пожаловать, <span id="user-name-display"></span>!</h2>
@@ -43,7 +42,13 @@
                 </div>
 
                 <section class="trends-section">
-                    <h3>Рынок сегодня</h3>
+                    <!-- 1. Заголовок и время (верхняя строка) -->
+                    <div class="section-header">
+                        <h3>Рынок сегодня</h3>
+                        <small id="update-status"></small> 
+                    </div>
+                    
+                    <!-- 2. Сетка карточек (нижний блок) -->
                     <div id="trends-grid" class="trends-grid">
                         <div class="loader">Загрузка котировок...</div>
                     </div>

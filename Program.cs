@@ -28,6 +28,8 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data S
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+builder.Services.AddMemoryCache();
+
 var key = Encoding.ASCII.GetBytes(apiConfig.JwtSecret);
 
 builder.Services.AddAuthentication(x =>

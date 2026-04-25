@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Memory;
 
 
 using homework3.Services;
@@ -20,12 +21,15 @@ public class StocksController : ControllerBase
     private readonly StockService _stockService;
     private readonly ICustomLogger _logger;
     private readonly AppDbContext _context;
+    private readonly IMemoryCache _cache;
+    
 
-    public StocksController(StockService service, ICustomLogger logger, AppDbContext context) 
+    public StocksController(StockService service, ICustomLogger logger, AppDbContext context, IMemoryCache cache) 
     {
         _stockService = service;
         _logger = logger;
         _context = context;
+        _cache = cache;
     }
 
     [HttpGet("{symbol}")]
@@ -131,22 +135,39 @@ public class StocksController : ControllerBase
     [HttpGet("trends")]
     public async Task<IActionResult> GetTrends()
     {
+        string cacheKey = "trends_data";
+
+        if (_cache.TryGetValue(cacheKey, out object cachedTrends))
+        {
+            _logger.LogAction("Тренды отданы из кэша", LogLevels.Info);
+            return Ok(cachedTrends);
+        }
+
         var trendSymbols = new[] { "AAPL", "TSLA", "MSFT", "GOOGL", "NVDA", "AMZN" };
-        var results = new List<object>();
+        var stockDataList = new List<object>();
 
         foreach (var symbol in trendSymbols)
         {
             var data = await _stockService.GetStockPriceAsync(symbol);
             if (data != null)
             {
-                results.Add(new { 
+                stockDataList.Add(new { 
                     Symbol = symbol, 
                     Price = data.CurrentPrice, 
                     Change = data.PercentChange 
                 });
             }
         }
-        return Ok(results);
+
+        var finalResult = new {
+            LastUpdated = DateTime.Now.ToString("HH:mm:ss"),
+            Stocks = stockDataList
+        };
+
+        _cache.Set(cacheKey, finalResult, TimeSpan.FromMinutes(5));
+
+        return Ok(finalResult);
     }
+
 
 }
