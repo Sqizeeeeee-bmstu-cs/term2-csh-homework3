@@ -1,34 +1,36 @@
 using System.Text;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-
 using homework3.Configs;
 using homework3.Services;
 using homework3.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOpenApi();
 
 builder.Services.AddControllers();
-
+builder.Services.AddOpenApi();
+builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ICustomLogger, ConsoleLogger>();
 
+
 var apiConfig = builder.Configuration.GetSection("FinnhubApi").Get<ApiConfig>();
-if (apiConfig != null) 
+
+
+if (apiConfig == null || string.IsNullOrEmpty(apiConfig.JwtSecret))
 {
-    builder.Services.AddSingleton(apiConfig);
+    throw new Exception("Критическая ошибка: Секция 'FinnhubApi' или 'JwtSecret' не найдены в appsettings.json");
 }
 
-builder.Services.AddHttpClient<StockService>();
+builder.Services.AddSingleton(apiConfig);
 
-builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data Source=stockhub.db"));
+
+builder.Services.AddHttpClient<StockService>();
+builder.Services.AddDbContext<AppDbContext>(options => 
+    options.UseSqlite("Data Source=stockhub.db"));
 
 builder.Services.AddScoped<IAuthService, AuthService>();
-
-builder.Services.AddMemoryCache();
 
 var key = Encoding.ASCII.GetBytes(apiConfig.JwtSecret);
 
@@ -52,8 +54,16 @@ builder.Services.AddAuthentication(x =>
 
 var app = builder.Build();
 
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
+
+
 app.UseDefaultFiles();
 app.UseStaticFiles();
+
 
 app.UseAuthentication();
 app.UseAuthorization();

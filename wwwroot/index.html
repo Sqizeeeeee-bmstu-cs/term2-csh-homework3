@@ -14,7 +14,6 @@
         </header>
 
         <main>
-            <!-- Секция авторизации -->
             <div id="auth-screen" class="auth-card">
                 <div class="tabs">
                     <button id="tab-login" class="active" onclick="switchTab('login')">Вход</button>
@@ -36,23 +35,84 @@
             </div>
 
             <div id="main-screen" class="hidden">
-                <div class="user-greeting">
-                    <h2>Добро пожаловать, <span id="user-name-display"></span>!</h2>
-                    <button onclick="logout()" class="btn-logout">Выйти</button>
-                </div>
+                <!-- nav  -->
+                <nav class="app-nav">
+                    <div class="nav-links">
+                        <button class="nav-btn active" onclick="showAppTab('market')">Рынок</button>
+                        <button class="nav-btn" onclick="showAppTab('wallet')">Кошелек</button>
+                    </div>
+                    <div class="user-controls">
+                        <span id="user-name-display"></span>
+                        <button onclick="logout()" class="btn-logout">Выйти</button>
+                    </div>
+                </nav>
 
-                <section class="trends-section">
-                    <!-- 1. Заголовок и время (верхняя строка) -->
-                    <div class="section-header">
-                        <h3>Рынок сегодня</h3>
-                        <small id="update-status"></small> 
-                    </div>
+                <div id="app-content">
                     
-                    <!-- 2. Сетка карточек (нижний блок) -->
-                    <div id="trends-grid" class="trends-grid">
-                        <div class="loader">Загрузка котировок...</div>
-                    </div>
-                </section>
+                    <!-- Вкладка 1: market -->
+                    <section id="pane-market" class="tab-pane">
+                        <div class="section-header">
+                            <h3>Рынок сегодня</h3>
+                            <small id="update-status"></small> 
+                        </div>
+                        <div id="trends-grid" class="trends-grid">
+                            <div class="loader">Загрузка котировок...</div>
+                        </div>
+                    </section>
+
+                    <!-- Вкладка 2: wallet -->
+                    <section id="pane-wallet" class="tab-pane hidden">
+                        <!-- 1. Заголовок и общая статистика -->
+                        <div class="wallet-header">
+                            <div class="balance-card">
+                                <h3>Ваш баланс: <span id="user-balance">0.00</span> $</h3>
+                                <p class="commission-stats">
+                                    Выплачено комиссий: <span id="user-commissions">0.00</span> $
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- 2. Секция активных инвестиций (те самые карточки-блоки) -->
+                        <div class="assets-section">
+                            <div class="assets-section">
+                                <h4>Мои активы</h4>
+                                <div id="portfolio-list" class="portfolio-grid">
+                                    <!-- Сюда JS вставит карточки -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Управление деньгами -->
+                        <div class="wallet-actions-grid">
+                            <div class="topup-section">
+                                <h4>Пополнение счета</h4>
+                                <div class="input-group">
+                                    <input type="number" id="topup-amount" placeholder="Сумма (max 10 000)">
+                                    <button onclick="handleTopUp()" class="btn-primary">Пополнить</button>
+                                </div>
+                            </div>
+
+                            <!-- 4. История последних операций -->
+                            <div class="history-section">
+                                <h4>История транзакций</h4>
+                                <div id="transaction-history" class="history-list">
+                                    <!-- Сюда JS отрисует список -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Модальное окно (остается скрытым до клика на карточку) -->
+                        <div id="asset-modal" class="modal hidden">
+                            <div class="modal-content">
+                                <span class="close-modal" onclick="closeModal()">&times;</span>
+                                <div id="modal-details">
+                                    <!-- Здесь будет выплывающая аналитика и графики -->
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
             </div>
         </main>
     </div>

@@ -1,7 +1,11 @@
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+
 using homework3.Services;
 using homework3.Exceptions;
+using homework3.Models;
+using homework3.Data;
 
 namespace homework3.Controllers;
 
@@ -11,11 +15,13 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly ICustomLogger _logger;
+    private readonly AppDbContext _context;
 
-    public AuthController(IAuthService authService, ICustomLogger logger)
+    public AuthController(IAuthService authService, ICustomLogger logger, AppDbContext context)
     {
         _authService = authService;
         _logger = logger;
+        _context = context;
     }
 
     public class RegisterRequest { public string Username { get; set; } = ""; public string Email { get; set; } = ""; public string Password { get; set; } = ""; }
@@ -58,6 +64,5 @@ public class AuthController : ControllerBase
             token = authData.Token
         });
     }
+
 }
-
-
