@@ -7,7 +7,8 @@
   },
   "FinnhubApi": {
     "ApiKey": "",
-    "BaseUrl": "https://finnhub.io"
+    "BaseUrl": "https://finnhub.io",
+    "JwtSecret": ""
   },
   "AllowedHosts": "*"
 }
