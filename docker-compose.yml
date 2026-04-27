@@ -1,0 +1,19 @@
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      FinnhubApi__ApiKey: ${ApiKey}
+      FinnhubApi__BaseUrl: ${BaseUrl}
+      FinnhubApi__JwtSecret: ${JwtSecret}
+    volumes:
+      - stockhub-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  stockhub-data:

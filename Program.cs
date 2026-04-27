@@ -17,10 +17,11 @@ builder.Services.AddSingleton<ICustomLogger, ConsoleLogger>();
 
 var apiConfig = builder.Configuration.GetSection("FinnhubApi").Get<ApiConfig>();
 
-
-if (apiConfig == null || string.IsNullOrEmpty(apiConfig.JwtSecret))
+if (apiConfig == null || string.IsNullOrEmpty(apiConfig.ApiKey) || string.IsNullOrEmpty(apiConfig.JwtSecret))
 {
-    throw new Exception("Критическая ошибка: Секция 'FinnhubApi' или 'JwtSecret' не найдены в appsettings.json");
+    throw new Exception(
+        "Критическая ошибка: не найдены FinnhubApi.ApiKey или FinnhubApi.JwtSecret в конфигурации (appsettings.* или переменные окружения)."
+    );
 }
 
 builder.Services.AddSingleton(apiConfig);
@@ -28,7 +29,7 @@ builder.Services.AddSingleton(apiConfig);
 
 builder.Services.AddHttpClient<StockService>();
 builder.Services.AddDbContext<AppDbContext>(options => 
-    options.UseSqlite("Data Source=stockhub.db"));
+    options.UseSqlite("Data Source=/app/data/stockhub.db"));
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 
@@ -53,6 +54,12 @@ builder.Services.AddAuthentication(x =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
 
 
 if (app.Environment.IsDevelopment())
