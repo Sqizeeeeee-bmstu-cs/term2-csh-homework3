@@ -1,0 +1,41 @@
+@model homework3.Models.Department
+@{
+    ViewData["Title"] = "Удалить кафедру";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Удалить кафедру</h1>
+
+<div class="alert alert-warning">
+    <p>Вы уверены, что хотите удалить эту кафедру?</p>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <dl class="row">
+            <dt class="col-sm-2">ID</dt>
+            <dd class="col-sm-10">@Model.Id</dd>
+            <dt class="col-sm-2">Название</dt>
+            <dd class="col-sm-10">@Model.Name</dd>
+            <dt class="col-sm-2">Преподавателей</dt>
+            <dd class="col-sm-10">@Model.Professors.Count</dd>
+        </dl>
+    </div>
+</div>
+
+@if (Model.Professors.Any())
+{
+    <div class="alert alert-danger">
+        <strong>Ошибка:</strong> Невозможно удалить кафедру, так как с ней связаны @Model.Professors.Count преподаватель(ей).
+        Сначала удалите все преподавателей этой кафедры.
+    </div>
+    <a class="btn btn-secondary" href="@Url.Action("Index")">Вернуться</a>
+}
+else
+{
+    <form asp-action="DeleteConfirmed" method="post" class="d-inline">
+        <input type="hidden" name="id" value="@Model.Id" />
+        <button type="submit" class="btn btn-danger">Удалить</button>
+        <a class="btn btn-secondary" href="@Url.Action("Index")">Отмена</a>
+    </form>
+}

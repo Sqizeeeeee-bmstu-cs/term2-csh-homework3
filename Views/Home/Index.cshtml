@@ -1,0 +1,16 @@
+@{
+    ViewData["Title"] = "Home Page";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="jumbotron">
+    <h1 class="display-4">Добро пожаловать!</h1>
+    <p class="lead">Это приложение для управления кафедрами и преподавателями.</p>
+    <hr class="my-4">
+    <p>Выберите раздел в меню навигации для начала работы:</p>
+    <div class="btn-group" role="group">
+        <a class="btn btn-primary btn-lg" href="@Url.Action("Index", "Departments")" role="button">Кафедры</a>
+        <a class="btn btn-primary btn-lg" href="@Url.Action("Index", "Professors")" role="button">Преподаватели</a>
+        <a class="btn btn-primary btn-lg" href="@Url.Action("Index", "Reports")" role="button">Отчёты</a>
+    </div>
+</div>

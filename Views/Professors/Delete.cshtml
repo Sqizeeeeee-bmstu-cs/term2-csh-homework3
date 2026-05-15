@@ -1,0 +1,32 @@
+@model homework3.Models.Professor
+@{
+    ViewData["Title"] = "Удалить преподавателя";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Удалить преподавателя</h1>
+
+<div class="alert alert-warning">
+    <p>Вы уверены, что хотите удалить этого преподавателя?</p>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <dl class="row">
+            <dt class="col-sm-3">ID</dt>
+            <dd class="col-sm-9">@Model.Id</dd>
+            <dt class="col-sm-3">Имя</dt>
+            <dd class="col-sm-9">@Model.Name</dd>
+            <dt class="col-sm-3">Кафедра</dt>
+            <dd class="col-sm-9">@Model.Department?.Name</dd>
+            <dt class="col-sm-3">Публикации</dt>
+            <dd class="col-sm-9">@Model.Publications</dd>
+        </dl>
+    </div>
+</div>
+
+<form asp-action="DeleteConfirmed" method="post" class="d-inline">
+    <input type="hidden" name="id" value="@Model.Id" />
+    <button type="submit" class="btn btn-danger">Удалить</button>
+    <a class="btn btn-secondary" href="@Url.Action("Index")">Отмена</a>
+</form>
