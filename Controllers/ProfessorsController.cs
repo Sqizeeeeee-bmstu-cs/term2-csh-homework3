@@ -6,9 +6,11 @@ using Microsoft.EntityFrameworkCore;
 namespace homework3.Controllers;
 
 /// <summary>
-/// Контроллер для управления преподавателями
+/// REST API контроллер для управления преподавателями
 /// </summary>
-public class ProfessorsController : Controller
+[ApiController]
+[Route("api/[controller]")]
+public class ProfessorsController : ControllerBase
 {
     private readonly AppDbContext _context;
 
@@ -18,172 +20,125 @@ public class ProfessorsController : Controller
     }
 
     /// <summary>
-    /// Отображение списка всех преподавателей (GET)
+    /// Получить список всех преподавателей
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<ActionResult<IEnumerable<object>>> GetProfessors()
     {
         var professors = await _context.Professors
             .Include(p => p.Department)
             .OrderBy(p => p.Name)
-            .ToListAsync();
-        return View(professors);
-    }
-
-    /// <summary>
-    /// Форма создания нового преподавателя (GET)
-    /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> Create()
-    {
-        var departments = await _context.Departments
-            .OrderBy(d => d.Name)
-            .ToListAsync();
-        ViewBag.Departments = departments;
-        return View();
-    }
-
-    /// <summary>
-    /// Сохранение нового преподавателя (POST)
-    /// </summary>
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("DepartmentId,Name,Publications")] Professor professor)
-    {
-        if (string.IsNullOrWhiteSpace(professor.Name))
-        {
-            ModelState.AddModelError("Name", "Имя преподавателя не может быть пустым");
-        }
-
-        if (professor.Publications < 0)
-        {
-            ModelState.AddModelError("Publications", "Количество публикаций не может быть отрицательным");
-        }
-
-        if (professor.DepartmentId <= 0)
-        {
-            ModelState.AddModelError("DepartmentId", "Выберите кафедру");
-        }
-
-        if (ModelState.IsValid)
-        {
-            _context.Add(professor);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        var departments = await _context.Departments
-            .OrderBy(d => d.Name)
-            .ToListAsync();
-        ViewBag.Departments = departments;
-        return View(professor);
-    }
-
-    /// <summary>
-    /// Форма редактирования преподавателя (GET)
-    /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> Edit(int? id)
-    {
-        if (id == null)
-            return NotFound();
-
-        var professor = await _context.Professors.FindAsync(id);
-        if (professor == null)
-            return NotFound();
-
-        var departments = await _context.Departments
-            .OrderBy(d => d.Name)
-            .ToListAsync();
-        ViewBag.Departments = departments;
-        return View(professor);
-    }
-
-    /// <summary>
-    /// Сохранение изменений преподавателя (POST)
-    /// </summary>
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,DepartmentId,Name,Publications")] Professor professor)
-    {
-        if (id != professor.Id)
-            return NotFound();
-
-        if (string.IsNullOrWhiteSpace(professor.Name))
-        {
-            ModelState.AddModelError("Name", "Имя преподавателя не может быть пустым");
-        }
-
-        if (professor.Publications < 0)
-        {
-            ModelState.AddModelError("Publications", "Количество публикаций не может быть отрицательным");
-        }
-
-        if (professor.DepartmentId <= 0)
-        {
-            ModelState.AddModelError("DepartmentId", "Выберите кафедру");
-        }
-
-        if (ModelState.IsValid)
-        {
-            try
+            .Select(p => new
             {
-                _context.Update(professor);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ProfessorExists(professor.Id))
-                    return NotFound();
-                throw;
-            }
-            return RedirectToAction(nameof(Index));
-        }
-
-        var departments = await _context.Departments
-            .OrderBy(d => d.Name)
+                p.Id,
+                p.Name,
+                p.DepartmentId,
+                DepartmentName = p.Department!.Name,
+                p.Publications
+            })
             .ToListAsync();
-        ViewBag.Departments = departments;
-        return View(professor);
+        return Ok(professors);
     }
 
     /// <summary>
-    /// Форма подтверждения удаления преподавателя (GET)
+    /// Получить преподавателя по ID
     /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> Delete(int? id)
+    [HttpGet("{id}")]
+    public async Task<ActionResult<object>> GetProfessor(int id)
     {
-        if (id == null)
-            return NotFound();
-
         var professor = await _context.Professors
             .Include(p => p.Department)
-            .FirstOrDefaultAsync(m => m.Id == id);
+            .Where(p => p.Id == id)
+            .Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.DepartmentId,
+                DepartmentName = p.Department!.Name,
+                p.Publications
+            })
+            .FirstOrDefaultAsync();
 
         if (professor == null)
-            return NotFound();
+            return NotFound(new { message = "Преподаватель не найден" });
 
-        return View(professor);
+        return Ok(professor);
     }
 
     /// <summary>
-    /// Удаление преподавателя (POST)
+    /// Создать нового преподавателя
     /// </summary>
-    [HttpPost("Professors/DeleteConfirmed/{id}")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int id)
+    [HttpPost]
+    public async Task<ActionResult<Professor>> CreateProfessor([FromBody] Professor professor)
     {
-        var professor = await _context.Professors.FindAsync(id);
-        if (professor != null)
-        {
-            _context.Professors.Remove(professor);
-            await _context.SaveChangesAsync();
-        }
-        return RedirectToAction(nameof(Index));
+        if (string.IsNullOrWhiteSpace(professor.Name))
+            return BadRequest(new { message = "Имя преподавателя не может быть пустым" });
+
+        if (professor.Publications < 0)
+            return BadRequest(new { message = "Количество публикаций не может быть отрицательным" });
+
+        if (professor.DepartmentId <= 0)
+            return BadRequest(new { message = "Выберите кафедру" });
+
+        var departmentExists = await _context.Departments.AnyAsync(d => d.Id == professor.DepartmentId);
+        if (!departmentExists)
+            return BadRequest(new { message = "Выбранная кафедра не существует" });
+
+        _context.Professors.Add(professor);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetProfessor), new { id = professor.Id }, professor);
     }
 
-    private bool ProfessorExists(int id)
+    /// <summary>
+    /// Обновить преподавателя
+    /// </summary>
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateProfessor(int id, [FromBody] Professor professor)
     {
-        return _context.Professors.Any(e => e.Id == id);
+        if (id != professor.Id)
+            return BadRequest(new { message = "ID не совпадает" });
+
+        if (string.IsNullOrWhiteSpace(professor.Name))
+            return BadRequest(new { message = "Имя преподавателя не может быть пустым" });
+
+        if (professor.Publications < 0)
+            return BadRequest(new { message = "Количество публикаций не может быть отрицательным" });
+
+        if (professor.DepartmentId <= 0)
+            return BadRequest(new { message = "Выберите кафедру" });
+
+        var existing = await _context.Professors.FindAsync(id);
+        if (existing == null)
+            return NotFound(new { message = "Преподаватель не найден" });
+
+        var departmentExists = await _context.Departments.AnyAsync(d => d.Id == professor.DepartmentId);
+        if (!departmentExists)
+            return BadRequest(new { message = "Выбранная кафедра не существует" });
+
+        existing.Name = professor.Name;
+        existing.DepartmentId = professor.DepartmentId;
+        existing.Publications = professor.Publications;
+
+        _context.Professors.Update(existing);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Преподаватель успешно обновлён" });
+    }
+
+    /// <summary>
+    /// Удалить преподавателя
+    /// </summary>
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteProfessor(int id)
+    {
+        var professor = await _context.Professors.FindAsync(id);
+        if (professor == null)
+            return NotFound(new { message = "Преподаватель не найден" });
+
+        _context.Professors.Remove(professor);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Преподаватель успешно удалён" });
     }
 }

@@ -3,15 +3,15 @@ using Microsoft.AspNetCore.Mvc;
 namespace homework3.Controllers;
 
 /// <summary>
-/// Главный контроллер
+/// Контроллер для обслуживания главной страницы
 /// </summary>
 public class HomeController : Controller
 {
     /// <summary>
-    /// Главная страница
+    /// Возвращает главную страницу (index.html из wwwroot)
     /// </summary>
     public IActionResult Index()
     {
-        return View();
+        return File("~/index.html", "text/html");
     }
 }

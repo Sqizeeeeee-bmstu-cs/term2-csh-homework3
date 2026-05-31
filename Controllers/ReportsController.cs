@@ -5,9 +5,11 @@ using Microsoft.EntityFrameworkCore;
 namespace homework3.Controllers;
 
 /// <summary>
-/// Контроллер для отчётов
+/// REST API контроллер для отчётов
 /// </summary>
-public class ReportsController : Controller
+[ApiController]
+[Route("api/[controller]")]
+public class ReportsController : ControllerBase
 {
     private readonly AppDbContext _context;
 
@@ -17,10 +19,10 @@ public class ReportsController : Controller
     }
 
     /// <summary>
-    /// Главная страница отчётов со всеми тремя разделами
+    /// Получить полный отчёт со всеми тремя разделами
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<ActionResult<object>> GetReport()
     {
         // Раздел 1: Полный список преподавателей с названием кафедры
         var report1 = await _context.Professors
@@ -56,10 +58,66 @@ public class ReportsController : Controller
             .OrderByDescending(r => r.AvgPublications)
             .ToListAsync();
 
-        ViewBag.Report1 = report1;
-        ViewBag.Report2 = report2;
-        ViewBag.Report3 = report3;
+        return Ok(new
+        {
+            section1 = report1,
+            section2 = report2,
+            section3 = report3
+        });
+    }
 
-        return View();
+    /// <summary>
+    /// Получить только раздел 1 (полный список)
+    /// </summary>
+    [HttpGet("section1")]
+    public async Task<ActionResult<IEnumerable<object>>> GetSection1()
+    {
+        var report = await _context.Professors
+            .Include(p => p.Department)
+            .OrderBy(p => p.Name)
+            .Select(p => new
+            {
+                p.Name,
+                DepartmentName = p.Department!.Name,
+                p.Publications
+            })
+            .ToListAsync();
+        return Ok(report);
+    }
+
+    /// <summary>
+    /// Получить только раздел 2 (количество по кафедрам)
+    /// </summary>
+    [HttpGet("section2")]
+    public async Task<ActionResult<IEnumerable<object>>> GetSection2()
+    {
+        var report = await _context.Professors
+            .GroupBy(p => p.Department!.Name)
+            .Select(g => new
+            {
+                Department = g.Key,
+                Count = g.Count()
+            })
+            .OrderBy(r => r.Department)
+            .ToListAsync();
+        return Ok(report);
+    }
+
+    /// <summary>
+    /// Получить только раздел 3 (среднее количество публикаций)
+    /// </summary>
+    [HttpGet("section3")]
+    public async Task<ActionResult<IEnumerable<object>>> GetSection3()
+    {
+        var report = await _context.Professors
+            .GroupBy(p => p.Department!.Name)
+            .Select(g => new
+            {
+                Department = g.Key,
+                AvgPublications = g.Average(p => p.Publications)
+            })
+            .OrderByDescending(r => r.AvgPublications)
+            .ToListAsync();
+        return Ok(report);
     }
 }

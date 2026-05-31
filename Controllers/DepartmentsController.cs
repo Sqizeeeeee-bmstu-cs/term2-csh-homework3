@@ -6,9 +6,11 @@ using Microsoft.EntityFrameworkCore;
 namespace homework3.Controllers;
 
 /// <summary>
-/// Контроллер для управления кафедрами
+/// REST API контроллер для управления кафедрами
 /// </summary>
-public class DepartmentsController : Controller
+[ApiController]
+[Route("api/[controller]")]
+public class DepartmentsController : ControllerBase
 {
     private readonly AppDbContext _context;
 
@@ -18,143 +20,90 @@ public class DepartmentsController : Controller
     }
 
     /// <summary>
-    /// Отображение списка всех кафедр (GET)
+    /// Получить список всех кафедр
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<ActionResult<IEnumerable<Department>>> GetDepartments()
     {
         var departments = await _context.Departments
             .OrderBy(d => d.Name)
             .ToListAsync();
-        return View(departments);
+        return Ok(departments);
     }
 
     /// <summary>
-    /// Форма создания новой кафедры (GET)
+    /// Получить кафедру по ID
     /// </summary>
-    [HttpGet]
-    public IActionResult Create()
-    {
-        return View();
-    }
-
-    /// <summary>
-    /// Сохранение новой кафедры (POST)
-    /// </summary>
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("Name")] Department department)
-    {
-        if (string.IsNullOrWhiteSpace(department.Name))
-        {
-            ModelState.AddModelError("Name", "Название кафедры не может быть пустым");
-        }
-
-        if (ModelState.IsValid)
-        {
-            _context.Add(department);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-        return View(department);
-    }
-
-    /// <summary>
-    /// Форма редактирования кафедры (GET)
-    /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> Edit(int? id)
-    {
-        if (id == null)
-            return NotFound();
-
-        var department = await _context.Departments.FindAsync(id);
-        if (department == null)
-            return NotFound();
-
-        return View(department);
-    }
-
-    /// <summary>
-    /// Сохранение изменений кафедры (POST)
-    /// </summary>
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,Name")] Department department)
-    {
-        if (id != department.Id)
-            return NotFound();
-
-        if (string.IsNullOrWhiteSpace(department.Name))
-        {
-            ModelState.AddModelError("Name", "Название кафедры не может быть пустым");
-        }
-
-        if (ModelState.IsValid)
-        {
-            try
-            {
-                _context.Update(department);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!DepartmentExists(department.Id))
-                    return NotFound();
-                throw;
-            }
-            return RedirectToAction(nameof(Index));
-        }
-        return View(department);
-    }
-
-    /// <summary>
-    /// Форма подтверждения удаления кафедры (GET)
-    /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> Delete(int? id)
-    {
-        if (id == null)
-            return NotFound();
-
-        var department = await _context.Departments
-            .Include(d => d.Professors)
-            .FirstOrDefaultAsync(m => m.Id == id);
-
-        if (department == null)
-            return NotFound();
-
-        return View(department);
-    }
-
-    /// <summary>
-    /// Удаление кафедры (POST)
-    /// </summary>
-    [HttpPost("Departments/DeleteConfirmed/{id}")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int id)
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Department>> GetDepartment(int id)
     {
         var department = await _context.Departments
             .Include(d => d.Professors)
             .FirstOrDefaultAsync(d => d.Id == id);
 
         if (department == null)
-            return NotFound();
+            return NotFound(new { message = "Кафедра не найдена" });
 
-        // Проверка: если есть связанные преподаватели, запретить удаление
+        return Ok(department);
+    }
+
+    /// <summary>
+    /// Создать новую кафедру
+    /// </summary>
+    [HttpPost]
+    public async Task<ActionResult<Department>> CreateDepartment([FromBody] Department department)
+    {
+        if (string.IsNullOrWhiteSpace(department.Name))
+            return BadRequest(new { message = "Название кафедры не может быть пустым" });
+
+        _context.Departments.Add(department);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetDepartment), new { id = department.Id }, department);
+    }
+
+    /// <summary>
+    /// Обновить кафедру
+    /// </summary>
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateDepartment(int id, [FromBody] Department department)
+    {
+        if (id != department.Id)
+            return BadRequest(new { message = "ID не совпадает" });
+
+        if (string.IsNullOrWhiteSpace(department.Name))
+            return BadRequest(new { message = "Название кафедры не может быть пустым" });
+
+        var existing = await _context.Departments.FindAsync(id);
+        if (existing == null)
+            return NotFound(new { message = "Кафедра не найдена" });
+
+        existing.Name = department.Name;
+        _context.Departments.Update(existing);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Кафедра успешно обновлена" });
+    }
+
+    /// <summary>
+    /// Удалить кафедру
+    /// </summary>
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteDepartment(int id)
+    {
+        var department = await _context.Departments
+            .Include(d => d.Professors)
+            .FirstOrDefaultAsync(d => d.Id == id);
+
+        if (department == null)
+            return NotFound(new { message = "Кафедра не найдена" });
+
         if (department.Professors.Any())
-        {
-            TempData["Error"] = "Невозможно удалить кафедру, так как с ней связаны преподаватели";
-            return RedirectToAction(nameof(Delete), new { id = id });
-        }
+            return BadRequest(new { message = "Невозможно удалить кафедру, так как с ней связаны преподаватели", professorCount = department.Professors.Count });
 
         _context.Departments.Remove(department);
         await _context.SaveChangesAsync();
-        return RedirectToAction(nameof(Index));
-    }
 
-    private bool DepartmentExists(int id)
-    {
-        return _context.Departments.Any(e => e.Id == id);
+        return Ok(new { message = "Кафедра успешно удалена" });
     }
 }

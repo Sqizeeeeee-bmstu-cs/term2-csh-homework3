@@ -9,6 +9,8 @@
 .Trashes
 ._*
 
+app.db-shm
+app.db-wal
 
 bin/
 obj/
